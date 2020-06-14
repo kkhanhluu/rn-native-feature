@@ -4,11 +4,19 @@ import { insertPlace, fetchPlaces } from '../helpers/db';
 export const ADD_PLACE = 'ADD_PLACE';
 export const SET_PLACES = 'SET_PLACES';
 
-export const addPlace = (title, image) => {
+export const addPlace = (title, image, location) => {
   return async (dispatch) => {
     const fileName = image.split('/').pop();
     const newPath = FileSystem.documentDirectory + fileName;
     try {
+      console.log('dmm', location);
+
+      const geoCodingResponse = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${location.long},${location.lat}.json?access_token=pk.eyJ1Ijoia2toYW5obHV1IiwiYSI6ImNqejF2cnpjZzBwYmIzZGxvMnl0ZGcxM2UifQ.9CODXiqDDccpSiexvQ6WCg`
+      );
+      const geoCoding = await geoCodingResponse.json();
+      const address = geoCoding.features[0].place_name;
+
       await FileSystem.moveAsync({
         from: image,
         to: newPath,
@@ -17,11 +25,10 @@ export const addPlace = (title, image) => {
       const dbResult = await insertPlace(
         title,
         newPath,
-        'Dummy address',
-        15.6,
-        12.3
+        address,
+        location.lat,
+        location.long
       );
-      console.log(dbResult);
       dispatch({
         type: ADD_PLACE,
         payload: {
